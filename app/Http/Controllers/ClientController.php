@@ -173,7 +173,7 @@ class ClientController extends Controller
      */
     public function destroy($id)
     {
-        Client::where($id)->delete();
+        Client::where($id)>update(["active", false]);
 
         return response()->json(["msg" => "Se ha elimando el cliente de forma exitosa."], 200);
 

@@ -15,7 +15,7 @@ class UnitController extends Controller
      */
     public function index()
     {
-        $data = Unit::all();
+        $data = Unit::where("active", 1)->get();
 
         return response()->json($data, 200);
     }
@@ -125,7 +125,7 @@ class UnitController extends Controller
      */
     public function destroy($id)
     {
-        Unit::where("id", $id)->delete();
+        Unit::where("id", $id)->update(["active" => 0]);
 
         return response()->json(["msg" => "Se ha eliminado la unidad de forma existosa"], 200);
     }

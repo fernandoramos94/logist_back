@@ -41,6 +41,7 @@ Route::get("service/list", [ServiceController::class, 'index']);
 Route::post("service/add", [ServiceController::class, 'store']);
 Route::post("service/update/{id}", [ServiceController::class, 'update']);
 Route::get("service/delete/{id}", [ServiceController::class, 'destroy']);
+Route::get("service/updateStatus/{id}/{status}", [ServiceController::class, 'updateStatus']);
 
 // Services clients
 Route::get("client/list", [ClientController::class, 'index']);
@@ -80,5 +81,8 @@ Route::get("code_postal/{code}", [CologneController::class, 'getCodes']);
 
 // get data status
 Route::get("status/", [StatusController::class, 'getData']);
+
+// uplaod files
+Route::post("upload/evidences/{id}/{status}", [ServiceController::class, 'uploadimage']);
 
 

@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Evidences;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Service;
+use App\Models\Status;
+use Illuminate\Support\Facades\DB;
 
 class ServiceController extends Controller
 {
@@ -15,7 +18,19 @@ class ServiceController extends Controller
      */
     public function index()
     {
-        $services = Service::select("service.*", "client.name as client")->join("client", "service.client_id", "=", "client.id")->get();
+        // $services = Service::select("service.*", "client.name as client")->join("client", "service.client_id", "=", "client.id")->get();
+
+        $sql = "SELECT service.*, e.status_id_one, e.status_id_two, client.name as client FROM service
+        INNER JOIN client ON client.id = service.client_id
+        LEFT JOIN (
+            SELECT service_id, 
+                SUM(CASE WHEN status_id = 3 THEN 1 ELSE 0 END) AS status_id_one,
+                SUM(CASE WHEN status_id = 4 THEN 1 ELSE 0 END) AS status_id_two
+            FROM evidences
+            GROUP BY service_id
+        ) AS e ON e.service_id = service.id";
+
+        $services = DB::select($sql);
 
         return response()->json($services, 200);
     }
@@ -209,5 +224,53 @@ class ServiceController extends Controller
 
         return response()->json(["msg" => "Se ha elimando el servicio de forma exitosa."], 200);
 
+    }
+
+    public function uploadimage(Request $request, $id, $status)
+    {
+        if(!$request->hasFile('file')) {
+            return response()->json(['upload_file_not_found'], 400);
+        }
+     
+        $allowedfileExtension=['jpg','png','jpeg','gif','svg'];
+        $files = $request->file('file'); 
+        $errors = [];
+     
+        foreach ($files as $file) {      
+     
+            $extension = $file->getClientOriginalExtension();
+     
+            $check = in_array($extension,$allowedfileExtension);
+     
+            if($check) {
+                foreach($files as $mediaFiles) {
+     
+                    $path = $mediaFiles->store('public/images');
+                    $name = $mediaFiles->getClientOriginalName();
+          
+                    //store image file into directory and db
+                    $save = new Evidences();
+                    $save->img = $path;
+                    $save->service_id = $id;
+                    $save->status_id = $status;
+                    $save->save();
+                    if((int)$status == 3){
+                        Service::where("id", $id)->update(["status_id" => 4]);
+                    }else if((int)$status == 4){
+                        Service::where("id", $id)->update(["status_id" => 5]);
+                    }
+                }
+            } else {
+                return response()->json(['invalid_file_format'], 422);
+            }
+     
+            return response()->json(['file_uploaded'], 200);
+     
+        }
+    }
+    public function updateStatus($id, $status){
+        Service::where("id", $id)->update(["status_id" => $status]);
+
+        return response()->json(["msg" => "ok"], 200);
     }
 }
