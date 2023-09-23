@@ -33,7 +33,7 @@ class ServiceController extends Controller
             SUM(CASE WHEN status_id = 1 THEN 1 ELSE 0 END) AS pending,
             SUM(CASE WHEN status_id in (2,3,4,5)  THEN 1 ELSE 0 END) AS in_route,
             SUM(CASE WHEN status_id = 6 THEN 1 ELSE 0 END) AS good
-            FROM service where created_at =".Carbon::now()->toDateString();
+            FROM service where created_at like '%".Carbon::now()->toDateString()."%'";
 
         $services = DB::select($sql);
         $servicesCount = DB::select($sqlCount);
