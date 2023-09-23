@@ -6,7 +6,7 @@ use App\Models\Evidences;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Service;
-use App\Models\Status;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class ServiceController extends Controller
@@ -18,7 +18,6 @@ class ServiceController extends Controller
      */
     public function index()
     {
-        // $services = Service::select("service.*", "client.name as client")->join("client", "service.client_id", "=", "client.id")->get();
 
         $sql = "SELECT service.*, e.status_id_one, e.status_id_two, client.name as client FROM service
         INNER JOIN client ON client.id = service.client_id
@@ -30,9 +29,24 @@ class ServiceController extends Controller
             GROUP BY service_id
         ) AS e ON e.service_id = service.id";
 
-        $services = DB::select($sql);
+        $sqlCount = "SELECT
+            SUM(CASE WHEN status_id = 1 THEN 1 ELSE 0 END) AS pending,
+            SUM(CASE WHEN status_id in (2,3,4,5)  THEN 1 ELSE 0 END) AS in_route,
+            SUM(CASE WHEN status_id = 6 THEN 1 ELSE 0 END) AS good
+            FROM service where upload_date =".Carbon::now()->toDateString();
 
-        return response()->json($services, 200);
+        $services = DB::select($sql);
+        $servicesCount = DB::select($sqlCount);
+
+        return response()->json(["data" => $services, "count" => $servicesCount], 200);
+    }
+
+    public function calendar(){
+        $sql = Service::select("client.name as title", "service.created_at as start")
+            ->join("client", "service.client_id", "=", "client.id")
+            ->get();
+
+        return response()->json($sql, 200);
     }
 
     /**
@@ -110,7 +124,8 @@ class ServiceController extends Controller
                 "upload_date" => $request["upload_date"],
                 "download_date" => $request["download_date"],
                 "download_time" => $request["download_time"],
-                "status_id" => 1
+                "status_id" => 1,
+                "created_at" => Carbon::now()
             ]);
             return response()->json(["msg" => "La orden se ha creado de forma exitosa."], 200);
         }
