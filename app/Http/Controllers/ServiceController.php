@@ -42,7 +42,7 @@ class ServiceController extends Controller
     }
 
     public function calendar(){
-        $sql = "SELECT service.*, client.name as title, concat_ws(' ', upload_date, charging_hour) as start FROM logist_back.service inner join client on client.id = service.client_id";
+        $sql = "SELECT service.*, client.name as title, concat_ws(' ', upload_date, charging_hour) as start FROM service inner join client on client.id = service.client_id";
         // $sql = Service::select("client.name as title", "service.upload_date as start", "service.*")
         //     ->join("client", "service.client_id", "=", "client.id")
         //     ->get();
