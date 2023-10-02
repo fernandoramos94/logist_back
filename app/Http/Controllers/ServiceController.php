@@ -42,14 +42,18 @@ class ServiceController extends Controller
     }
 
     public function calendar(){
-        $sql = "SELECT service.*, client.name as title, concat_ws(' ', upload_date, charging_hour) as start FROM service inner join client on client.id = service.client_id";
+        $sql = "SELECT service.*, client.name as title, concat_ws(' ', upload_date, charging_hour) as start, '#008f39' as color, '0' as is_end  FROM service inner join client on client.id = service.client_id";
+        $sql_end = "SELECT service.*, client.name as title, concat_ws(' ', download_date, download_time) as start, '#cc0000' as color, '1' as is_end FROM service inner join client on client.id = service.client_id";
         // $sql = Service::select("client.name as title", "service.upload_date as start", "service.*")
         //     ->join("client", "service.client_id", "=", "client.id")
         //     ->get();
 
         $data = DB::select($sql);
+        $data2 = DB::select($sql_end);
 
-        return response()->json($data, 200);
+        $result = array_merge($data, $data2);
+
+        return response()->json($result, 200);
     }
 
     /**
