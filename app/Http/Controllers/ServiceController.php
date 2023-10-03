@@ -274,11 +274,11 @@ class ServiceController extends Controller
                     $save->service_id = $id;
                     $save->status_id = $status;
                     $save->save();
-                    if((int)$status == 3){
-                        Service::where("id", $id)->update(["status_id" => 4]);
-                    }else if((int)$status == 4){
-                        Service::where("id", $id)->update(["status_id" => 5]);
-                    }
+                    // if((int)$status == 3){
+                    //     Service::where("id", $id)->update(["status_id" => 4]);
+                    // }else if((int)$status == 4){
+                    //     Service::where("id", $id)->update(["status_id" => 5]);
+                    // }
                 }
             } else {
                 return response()->json(['invalid_file_format'], 422);
@@ -317,6 +317,6 @@ class ServiceController extends Controller
 
         $pdf = PDF::loadView('orden', $data);
 
-        return $pdf->stream('ordenServicio00001.pdf');
+        return $pdf->stream('ordenServicio'.$info->id.'.pdf');
     }
 }
