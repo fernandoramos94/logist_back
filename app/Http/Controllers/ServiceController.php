@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Validator;
 use App\Models\Service;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use PDF;
 
 class ServiceController extends Controller
 {
@@ -44,9 +45,6 @@ class ServiceController extends Controller
     public function calendar(){
         $sql = "SELECT service.*, client.name as title, concat_ws(' ', upload_date, charging_hour) as start, '#008f39' as color, '0' as is_end  FROM service inner join client on client.id = service.client_id";
         $sql_end = "SELECT service.*, client.name as title, concat_ws(' ', download_date, download_time) as start, '#cc0000' as color, '1' as is_end FROM service inner join client on client.id = service.client_id";
-        // $sql = Service::select("client.name as title", "service.upload_date as start", "service.*")
-        //     ->join("client", "service.client_id", "=", "client.id")
-        //     ->get();
 
         $data = DB::select($sql);
         $data2 = DB::select($sql_end);
@@ -294,5 +292,31 @@ class ServiceController extends Controller
         Service::where("id", $id)->update(["status_id" => $status]);
 
         return response()->json(["msg" => "ok"], 200);
+    }
+
+    public function generatePDF($id){
+
+        $info = Service::select(
+            "service.*",
+            "client.name as client",
+            "unit.plates",
+            "unit.unit",
+            DB::raw("CONCAT(driver.name, ' ', driver.last_name) AS driver"),
+            DB::raw("CONCAT(assistant.name, ' ', assistant.last_name) AS assistant")
+        )->join("client", "client.id", "=", "service.client_id")
+        ->join("unit", "unit.id", "=", "service.unit_id")
+        ->join("assistant", "assistant.id", "=", "service.assistant_id")
+        ->join("driver", "driver.id", "=", "service.driver_id")
+        ->where("service.id", $id)->first();
+        $data = [
+            'title' => 'Welcome to ItSolutionStuff.com',
+            'data' => $info
+        ]; 
+
+            
+
+        $pdf = PDF::loadView('orden', $data);
+
+        return $pdf->stream('ordenServicio00001.pdf');
     }
 }

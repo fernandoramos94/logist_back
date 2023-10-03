@@ -1,0 +1,92 @@
+::root{
+    --title-color: rgb(0, 0, 0);
+    --icon-color: rgb(60, 182, 232);
+    --text-color: rgb(142, 142, 142);
+
+}
+
+.input-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.icon-color{
+    color: rgb(60, 182, 232);
+}
+
+.table-item{
+    color: rgb(142, 142, 142);
+}
+
+.table-text{
+    font-size: 0.7em;
+}
+
+.table-bg{
+    background: rgb(229, 229, 229);
+}
+
+article .table-text > div{
+    padding: 6px 0;
+}
+
+.cant-col > div{
+    padding-left: 10px !important;
+}
+
+.input {
+    box-sizing: border-box;
+    padding: 0.6em 15px;
+    font-size: 0.7em;
+    width: 100%;
+    border: 1px solid rgb(142, 142, 142) !important;
+    outline: none;
+    max-width: 420px;
+    color: rgb(142, 142, 142);
+    border-radius: 6px;
+}
+.input::placeholder{
+    color: rgb(142, 142, 142);
+}
+
+.input-icon {
+    color: #191919;
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.logo{
+    height: 33px;
+    width: 100px;
+}
+
+#consume > .title{
+    font-size: 0.8em;
+}
+
+.input-date, .input-time{
+    display: flex;
+    flex-direction: row-reverse;
+    padding: 0.5em 4px;
+    text-align: end;
+}
+
+.input-date::-webkit-calendar-picker-indicator, .input-date::-webkit-calendar-picker-indicator{
+    background-image: url('../img/calendar_icon.png');
+
+}
+  
+.input-time::-webkit-calendar-picker-indicator, .input-time::-webkit-calendar-picker-indicator{
+    background-image: url('../img/time_icon.png');
+    background-position-x: -6px;;
+}
+  
+.firma-input{
+    border: 0;
+    border-bottom: 1px solid #000;
+    outline: none;
+}
