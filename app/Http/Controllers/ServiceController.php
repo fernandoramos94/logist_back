@@ -319,4 +319,10 @@ class ServiceController extends Controller
 
         return $pdf->stream('ordenServicio'.$info->id.'.pdf');
     }
+
+    public function evidences(Request $request){
+        $data = Evidences::where([["service_id", "=", $request["orden_id"], ["status_id", "=", $request["status_id"]]]])->get();
+
+        return response()->json($data, 200);
+    }
 }

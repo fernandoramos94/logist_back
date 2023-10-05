@@ -39,6 +39,7 @@ Route::post("user/register", [UserController::class, 'register']);
 // Services clients
 Route::get("service/list", [ServiceController::class, 'index']);
 Route::post("service/add", [ServiceController::class, 'store']);
+Route::post("service/evidences", [ServiceController::class, 'evidences']);
 Route::post("service/update/{id}", [ServiceController::class, 'update']);
 Route::get("service/delete/{id}", [ServiceController::class, 'destroy']);
 Route::get("service/calendar", [ServiceController::class, 'calendar']);
