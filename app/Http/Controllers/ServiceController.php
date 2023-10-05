@@ -321,7 +321,10 @@ class ServiceController extends Controller
     }
 
     public function evidences(Request $request){
-        $data = Evidences::where([["service_id", "=", $request["orden_id"], ["status_id", "=", $request["status_id"]]]])->get();
+        $data = Evidences::where([
+            ["service_id", "=", $request["orden_id"]], 
+            ["status_id", "=", $request["status_id"]]
+        ])->get();
 
         return response()->json($data, 200);
     }
