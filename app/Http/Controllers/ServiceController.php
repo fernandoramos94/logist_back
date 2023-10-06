@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Validator;
 use App\Models\Service;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use PDF;
 
 class ServiceController extends Controller
@@ -20,7 +21,7 @@ class ServiceController extends Controller
     public function index()
     {
 
-        $sql = "SELECT service.*, e.status_id_one, e.status_id_two, client.name as client FROM service
+        $sql = "SELECT service.*, e.status_id_one, e.status_id_two, client.name as client FROM service 
         INNER JOIN client ON client.id = service.client_id
         LEFT JOIN (
             SELECT service_id, 
@@ -34,7 +35,7 @@ class ServiceController extends Controller
             SUM(CASE WHEN status_id = 1 THEN 1 ELSE 0 END) AS pending,
             SUM(CASE WHEN status_id in (2,3,4,5)  THEN 1 ELSE 0 END) AS in_route,
             SUM(CASE WHEN status_id = 6 THEN 1 ELSE 0 END) AS good
-            FROM service where created_at like '%".Carbon::now()->toDateString()."%'";
+            FROM service where created_at like '%" . Carbon::now()->toDateString() . "%'";
 
         $services = DB::select($sql);
         $servicesCount = DB::select($sqlCount);
@@ -42,7 +43,8 @@ class ServiceController extends Controller
         return response()->json(["data" => $services, "count" => $servicesCount], 200);
     }
 
-    public function calendar(){
+    public function calendar()
+    {
         $sql = "SELECT service.*, client.name as title, concat_ws(' ', upload_date, charging_hour) as start, '#008f39' as color, '0' as is_end  FROM service inner join client on client.id = service.client_id";
         $sql_end = "SELECT service.*, client.name as title, concat_ws(' ', download_date, download_time) as start, '#cc0000' as color, '1' as is_end FROM service inner join client on client.id = service.client_id";
 
@@ -109,9 +111,9 @@ class ServiceController extends Controller
             "download_time.required" => "El campo hora descargue es requerido."
         ]);
 
-        if($validator->fails()){
+        if ($validator->fails()) {
             return response()->json($validator->errors(), 406);
-        }else{
+        } else {
             Service::insert([
                 "client_id" => $request["client"],
                 "origin_address" => $request["origin"],
@@ -205,9 +207,9 @@ class ServiceController extends Controller
             "download_time.required" => "El campo hora descargue es requerido."
         ]);
 
-        if($validator->fails()){
+        if ($validator->fails()) {
             return response()->json($validator->errors(), 406);
-        }else{
+        } else {
             Service::where("id", $id)->update([
                 "client_id" => $request["client"],
                 "origin_address" => $request["origin"],
@@ -229,7 +231,6 @@ class ServiceController extends Controller
 
             return response()->json(["msg" => "Datos actualizado de forma existosa."], 200);
         }
-
     }
 
     /**
@@ -243,58 +244,58 @@ class ServiceController extends Controller
         Service::where($id)->delete();
 
         return response()->json(["msg" => "Se ha elimando el servicio de forma exitosa."], 200);
-
     }
 
     public function uploadimage(Request $request, $id, $status)
     {
-        if(!$request->hasFile('file')) {
+        if (!$request->hasFile('file')) {
             return response()->json(['upload_file_not_found'], 400);
         }
-     
-        $allowedfileExtension=['jpg','png','jpeg','gif','svg'];
-        $files = $request->file('file'); 
+
+        $allowedfileExtension = ['jpg', 'png', 'jpeg', 'gif', 'svg'];
+        $files = $request->file('file');
         $errors = [];
-     
-        foreach ($files as $file) {      
-     
+
+        foreach ($files as $file) {
+
             $extension = $file->getClientOriginalExtension();
-     
-            $check = in_array($extension,$allowedfileExtension);
-     
-            if($check) {
-                foreach($files as $mediaFiles) {
-     
+
+            $check = in_array($extension, $allowedfileExtension);
+
+            if ($check) {
+                foreach ($files as $mediaFiles) {
+
                     $path = $mediaFiles->store('public/images');
                     $name = $mediaFiles->getClientOriginalName();
-          
+
                     //store image file into directory and db
                     $save = new Evidences();
                     $save->img = $path;
                     $save->service_id = $id;
                     $save->status_id = $status;
                     $save->save();
-                    if((int)$status == 3){
+                    if ((int)$status == 3) {
                         Service::where("id", $id)->update(["status_id" => 4]);
-                    }else if((int)$status == 4){
+                    } else if ((int)$status == 4) {
                         Service::where("id", $id)->update(["status_id" => 5]);
                     }
                 }
             } else {
                 return response()->json(['invalid_file_format'], 422);
             }
-     
+
             return response()->json(['file_uploaded'], 200);
-     
         }
     }
-    public function updateStatus($id, $status){
+    public function updateStatus($id, $status)
+    {
         Service::where("id", $id)->update(["status_id" => $status]);
 
         return response()->json(["msg" => "ok"], 200);
     }
 
-    public function generatePDF($id){
+    public function generatePDF($id)
+    {
 
         $info = Service::select(
             "service.*",
@@ -304,27 +305,33 @@ class ServiceController extends Controller
             DB::raw("CONCAT(driver.name, ' ', driver.last_name) AS driver"),
             DB::raw("CONCAT(assistant.name, ' ', assistant.last_name) AS assistant")
         )->join("client", "client.id", "=", "service.client_id")
-        ->join("unit", "unit.id", "=", "service.unit_id")
-        ->join("assistant", "assistant.id", "=", "service.assistant_id")
-        ->join("driver", "driver.id", "=", "service.driver_id")
-        ->where("service.id", $id)->first();
+            ->join("unit", "unit.id", "=", "service.unit_id")
+            ->join("assistant", "assistant.id", "=", "service.assistant_id")
+            ->join("driver", "driver.id", "=", "service.driver_id")
+            ->where("service.id", $id)->first();
         $data = [
             'title' => 'Welcome to ItSolutionStuff.com',
             'data' => $info
-        ]; 
+        ];
 
-            
+
 
         $pdf = PDF::loadView('orden', $data);
 
-        return $pdf->stream('ordenServicio'.$info->id.'.pdf');
+        return $pdf->stream('ordenServicio' . $info->id . '.pdf');
     }
 
-    public function evidences(Request $request){
+    public function evidences(Request $request)
+    {
         $data = Evidences::where([
-            ["service_id", "=", $request["orden_id"]], 
+            ["service_id", "=", $request["orden_id"]],
             ["status_id", "=", $request["status_id"]]
         ])->get();
+
+
+        foreach ($data as $item) {
+            $item["img"] = Storage::url("storage/".$item["img"]);
+        }
 
         return response()->json($data, 200);
     }
