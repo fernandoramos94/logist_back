@@ -330,7 +330,7 @@ class ServiceController extends Controller
 
 
         foreach ($data as $item) {
-            $item["img"] = Storage::url("storage/".$item["img"]);
+            $item["img"] = Storage::url($item["img"]);
         }
 
         return response()->json($data, 200);
