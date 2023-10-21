@@ -21,7 +21,7 @@ class ServiceController extends Controller
     public function index()
     {
 
-        $sql = "SELECT service.*, e.status_id_one, e.status_id_two, client.name as client FROM service 
+        $sql = "SELECT service.*, concat_ws(' ', upload_date, charging_hour) as date_start, concat_ws(' ', download_date, download_time) as date_end, e.status_id_one, e.status_id_two, client.name as client FROM service 
         INNER JOIN client ON client.id = service.client_id
         LEFT JOIN (
             SELECT service_id, 
