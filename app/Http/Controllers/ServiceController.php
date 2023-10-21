@@ -335,4 +335,9 @@ class ServiceController extends Controller
 
         return response()->json($data, 200);
     }
+
+    public function cancelOrder($id){
+        Service::where("id", $id)->update(["status_id" => 7]);
+        return response()->json(["msg" => "ok"], 200);
+    }
 }
