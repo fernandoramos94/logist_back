@@ -46,8 +46,24 @@ class ServiceController extends Controller
 
     public function calendar()
     {
-        $sql = "SELECT service.*, client.name as title, concat_ws(' ', upload_date, charging_hour) as start, '#008f39' as color, '0' as is_end  FROM service inner join client on client.id = service.client_id";
-        $sql_end = "SELECT service.*, client.name as title, concat_ws(' ', download_date, download_time) as start, '#cc0000' as color, '1' as is_end FROM service inner join client on client.id = service.client_id";
+        $sql = "SELECT service.*, client.name as title, concat_ws(' ', upload_date, charging_hour) as start, case 
+                    when status_id = 1 then '#F53043'
+                    when status_id = 2 then '#FCA14E'
+                    when status_id = 3 then '#FB8B25'
+                    when status_id = 4 then '#57BFFE'
+                    when status_id = 5 then '#2F76E5'
+                    when status_id = 6 then '#44C150'
+                    else '#FF0000' 
+                    end as color, '0' as is_end  FROM service inner join client on client.id = service.client_id";
+        $sql_end = "SELECT service.*, client.name as title, concat_ws(' ', download_date, download_time) as start, case 
+                    when status_id = 1 then '#F53043'
+                    when status_id = 2 then '#FCA14E'
+                    when status_id = 3 then '#FB8B25'
+                    when status_id = 4 then '#57BFFE'
+                    when status_id = 5 then '#2F76E5'
+                    when status_id = 6 then '#44C150'
+                    else '#FF0000' 
+                    end as color, '1' as is_end FROM service inner join client on client.id = service.client_id";
 
         $data = DB::select($sql);
         $data2 = DB::select($sql_end);
