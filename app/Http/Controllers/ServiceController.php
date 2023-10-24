@@ -23,13 +23,14 @@ class ServiceController extends Controller
 
         $sql = "SELECT service.*, concat_ws(' ', upload_date, charging_hour) as date_start, concat_ws(' ', download_date, download_time) as date_end, e.status_id_one, e.status_id_two, client.name as client FROM service 
         INNER JOIN client ON client.id = service.client_id
+        INNER JOIN status ON status.id = service.status_id
         LEFT JOIN (
             SELECT service_id, 
                 SUM(CASE WHEN status_id = 3 THEN 1 ELSE 0 END) AS status_id_one,
                 SUM(CASE WHEN status_id = 4 THEN 1 ELSE 0 END) AS status_id_two
             FROM evidences
             GROUP BY service_id
-        ) AS e ON e.service_id = service.id";
+        ) AS e ON e.service_id = service.id order by status.id asc";
 
         $sqlCount = "SELECT
             SUM(CASE WHEN status_id = 1 THEN 1 ELSE 0 END) AS pending,
