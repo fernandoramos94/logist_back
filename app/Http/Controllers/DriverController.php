@@ -175,7 +175,7 @@ class DriverController extends Controller
      */
     public function destroy($id)
     {
-        $delete = Driver::where("id", $id)>update(["active", false]);
+        $delete = Driver::where("id", $id)>update(["active" => false]);
 
         return response()->json(["msg" => "Se ha eliminado el recurso de forma existosa"], 200);
     }

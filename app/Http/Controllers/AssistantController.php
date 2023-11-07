@@ -173,7 +173,7 @@ class AssistantController extends Controller
      */
     public function destroy($id)
     {
-        Assistant::where("id", $id)->update(["active", false]);
+        Assistant::where("id", $id)->update(["active" => false]);
 
         return response()->json(["msg" => "Se ha eliminado el recurso de forma existosa"], 200);
     }
