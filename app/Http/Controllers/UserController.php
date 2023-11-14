@@ -73,7 +73,12 @@ class UserController extends Controller
         if($token = Auth::attempt(['user' => $request['user'], 'password' => $request['password']])){ 
             $user = Auth::user(); 
             $success['token'] =  $user->createToken('tmhLogistc'); 
-            return response()->json(['success' => $success, 'data' => $user], 200); 
+            
+            if(!$user->status){
+                return response()->json(['error'=>'El usuario se encuentra inactivo'], 401); 
+            }else{
+                return response()->json(['success' => $success, 'data' => $user], 200); 
+            }
         } 
         else{ 
             return response()->json(['error'=>'Usuario o contraseña incorrecta'], 401); 
