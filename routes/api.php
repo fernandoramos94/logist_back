@@ -34,7 +34,11 @@ Route::middleware('auth:api')->group(function () {
 
 
 Route::post("login", [UserController::class, 'login']);
+Route::get("user/list", [UserController::class, 'list']);
 Route::post("user/register", [UserController::class, 'register']);
+Route::post("user/update/{id}", [UserController::class, 'editAccount']);
+Route::post("user/changePassword/{id}", [UserController::class, 'updatePassword']);
+Route::post("user/updateStatus/{id}", [UserController::class, 'updateStatus']);
 
 // Services clients
 Route::get("service/list", [ServiceController::class, 'index']);
