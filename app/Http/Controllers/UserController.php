@@ -77,7 +77,7 @@ class UserController extends Controller
             if((int)$user->status == 1){
                 return response()->json(['success' => $success, 'data' => $user], 200);  
             }else{
-                return response()->json(['error'=>'El usuario se encuentra inactivo'], 401);
+                return response()->json(['error'=>'El usuario se encuentra inactivo', "data" => $user], 401);
                  
             }
         } 
