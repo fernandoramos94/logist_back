@@ -74,10 +74,11 @@ class UserController extends Controller
             $user = Auth::user(); 
             $success['token'] =  $user->createToken('tmhLogistc'); 
             
-            if($user->status == 0){
-                return response()->json(['error'=>'El usuario se encuentra inactivo'], 401); 
+            if((int)$user->status == 1){
+                return response()->json(['success' => $success, 'data' => $user], 200);  
             }else{
-                return response()->json(['success' => $success, 'data' => $user], 200); 
+                return response()->json(['error'=>'El usuario se encuentra inactivo'], 401);
+                 
             }
         } 
         else{ 
