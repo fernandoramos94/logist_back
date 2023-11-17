@@ -401,7 +401,7 @@
                         </td>
                         <td>
                             <label class="title">
-                                Auxiliar
+                                Auxiliar(s)
                             </label> </br>
                             <span class="span-input text-color">{{$data->assistant}}</span>
                         </td>

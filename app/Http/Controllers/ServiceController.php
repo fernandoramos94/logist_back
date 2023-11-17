@@ -131,7 +131,8 @@ class ServiceController extends Controller
         if ($validator->fails()) {
             return response()->json($validator->errors(), 406);
         } else {
-            Service::insert([
+            
+            $idService = Service::insertGetId([
                 "client_id" => $request["client"],
                 "origin_address" => $request["origin"],
                 "destination_address" => $request["destination"],
@@ -151,8 +152,23 @@ class ServiceController extends Controller
                 "status_id" => 1,
                 "created_at" => Carbon::now()
             ]);
+
+            $this->insertServiceAssistant($request["assistants"], $idService);
+
             return response()->json(["msg" => "La orden se ha creado de forma exitosa."], 200);
         }
+    }
+
+    public function insertServiceAssistant($data, $service_id){
+
+        $arrayDataInsert = [];
+
+        foreach ($data as $item) {
+            $arrayDataInsert[] = array("order_id" => $service_id, "assistant_id" => $item["assistant_id"]);
+        }
+
+        $table = DB::table("service_assitant")->insert($arrayDataInsert);
+        return true;
     }
 
     /**
@@ -326,8 +342,17 @@ class ServiceController extends Controller
             ->join("assistant", "assistant.id", "=", "service.assistant_id")
             ->join("driver", "driver.id", "=", "service.driver_id")
             ->where("service.id", $id)->first();
+
+
+        $assistants = DB::table("service_assitant")->select(DB::raw("CONCAT(assistant.name, ' ', assistant.last_name) AS assistant"))->where("order_id", $id)
+            ->join("assistant", "assistant.id", "=", "service_assitant.assistant_id")
+            ->get();
+
+        foreach ($assistants as $item) {
+            $info->assistant = $info->assistant . ', '.  $item->assistant;
+        }
         $data = [
-            'title' => 'Welcome to ItSolutionStuff.com',
+            'title' => 'Services',
             'data' => $info
         ];
 

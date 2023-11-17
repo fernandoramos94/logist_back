@@ -18,4 +18,4 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('generate-pdf/{id}', [ServiceController::class, 'generatePDF']);
+Route::get('api/generate-pdf/{id}', [ServiceController::class, 'generatePDF']);

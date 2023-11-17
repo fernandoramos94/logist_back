@@ -35,7 +35,7 @@ class UserController extends Controller
             "user" => $input["user"],
             "email" => $input["email"],
             "type_admin" => $input["type_admin"],
-            "status" => $input["status"]
+            "status" => $input["status"] == true || $input["status"] == 1 || $input["status"] == '1' ? 1 : 0
         ]); 
         return response()->json(["msg" => "Se ha realizado la actualizacion de la cuenta de forma exitosa"], 200); 
     }
@@ -68,6 +68,10 @@ class UserController extends Controller
         ]); 
         return response()->json(["msg" => "Estado actualizado de forma exitosa"], 200); 
     }
+    public function delete($id){
+        $user = User::where("id", $id)->delete(); 
+        return response()->json(["msg" => "Se ha eliminado la cuenta de usuario de forma exitosa"], 200); 
+    }
     public function login(Request $request)
     {
         if($token = Auth::attempt(['user' => $request['user'], 'password' => $request['password']])){ 
@@ -78,7 +82,6 @@ class UserController extends Controller
                 return response()->json(['success' => $success, 'data' => $user], 200);  
             }else{
                 return response()->json(['error'=>'El usuario se encuentra inactivo', "data" => $user], 401);
-                 
             }
         } 
         else{ 
@@ -99,9 +102,16 @@ class UserController extends Controller
             return response()->json(['error'=>$validator->errors()], 401);            
         }
         $input = $request->all(); 
-        $input['password'] = bcrypt($input['password']); 
-        $user = User::create($input); 
-        return response()->json(["msg" => "Se ha creado el usuario de forma exitosa"], 200); 
+        $pass = bcrypt($input['password']); 
+        $user = User::insert([
+            "name" => $input["name"],
+            "user" => $input["user"],
+            "email" => $input["email"],
+            "type_admin" => $input["type_admin"],
+            "password" => $pass,
+            "status" => $input["status"]
+        ]); ; 
+        return response()->json(["msg" => "Se ha creado el usuario de forma exitosa", "data" => $input], 200); 
     }
 
     public function logout()
