@@ -6,8 +6,8 @@ use Illuminate\Http\Request;
 
 use Illuminate\Support\Facades\Auth; 
 use Validator;
-use Illuminate\Support\Facades\Lang;
 use App\Models\User;
+use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
 {
@@ -77,6 +77,8 @@ class UserController extends Controller
         if($token = Auth::attempt(['user' => $request['user'], 'password' => $request['password']])){ 
             $user = Auth::user(); 
             $success['token'] =  $user->createToken('tmhLogistc'); 
+
+            $user->img = Storage::url($user->img);
             
             if((int)$user->status == 1){
                 return response()->json(['success' => $success, 'data' => $user], 200);  
