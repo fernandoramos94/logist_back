@@ -40,6 +40,7 @@ Route::post("user/update/{id}", [UserController::class, 'editAccount']);
 Route::post("user/changePassword/{id}", [UserController::class, 'updatePassword']);
 Route::post("user/updateStatus/{id}", [UserController::class, 'updateStatus']);
 Route::delete("user/delete/{id}", [UserController::class, 'delete']);
+Route::post("user/uploadPhoto/{id}", [UserController::class, 'uploadimage']);
 
 // Services clients
 Route::get("service/list", [ServiceController::class, 'index']);

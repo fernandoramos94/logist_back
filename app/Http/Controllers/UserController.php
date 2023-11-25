@@ -135,5 +135,29 @@ class UserController extends Controller
         ]);
     }
 
+    public function uploadimage(Request $request, $id)
+    {
+        if (!$request->hasFile('file')) {
+            return response()->json(['upload_file_not_found'], 400);
+        }
+
+        $allowedfileExtension = ['jpg', 'png', 'jpeg', 'gif', 'svg'];
+        $file = $request->file('file');
+        
+        $extension = $file->getClientOriginalExtension();
+
+        $check = in_array($extension, $allowedfileExtension);
+
+        if ($check) {
+            $path = $file->store('public/images');
+            $name = $file->getClientOriginalName();
+            User::where("id", $id)->update(["img" => $path]);
+        } else {
+            return response()->json(['invalid_file_format'], 422);
+        }
+
+        return response()->json(['file_uploaded'], 200);
+    }
+
     
 }
