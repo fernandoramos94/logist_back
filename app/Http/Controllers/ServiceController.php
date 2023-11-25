@@ -36,12 +36,57 @@ class ServiceController extends Controller
             SUM(CASE WHEN status_id = 1 THEN 1 ELSE 0 END) AS pending,
             SUM(CASE WHEN status_id in (2,3,4,5)  THEN 1 ELSE 0 END) AS in_route,
             SUM(CASE WHEN status_id = 6 THEN 1 ELSE 0 END) AS good
-            FROM service where created_at like '%" . Carbon::now()->toDateString() . "%'";
+            FROM service";
 
         $services = DB::select($sql);
         $servicesCount = DB::select($sqlCount);
 
         return response()->json(["data" => $services, "count" => $servicesCount], 200);
+    }
+
+    public function filter(Request $request){
+
+        $where = null;
+
+        if($request["client"]){
+            $where .= $where != null ? " and service.client_id = ". $request["client"] : "where service.client_id = ". $request["client"];
+        }
+        if($request["status"]){
+            $where .= $where != null ? " and service.status_id = ". $request["status"] : "where service.status_id = ". $request["status"];
+        }
+        if($request["upload_date"]){
+            $where .= $where != null ? " and service.upload_date = '". $request["upload_date"]."'" : "where service.upload_date = '". $request["upload_date"]."'";
+        }
+        if($request["download_date"]){
+            $where .= $where != null ? " and service.download_date = '". $request["download_date"]."'" : "where service.download_date = '". $request["download_date"]."'";
+        }
+        if($request["created_at"]){
+            $where .= $where != null ? " and service.created_at like '%". $request["created_at"]."%'" : "where service.created_at like '%". $request["created_at"]."%'";
+        }
+
+        $sql = "SELECT service.*, concat_ws(' ', upload_date, charging_hour) as date_start, concat_ws(' ', download_date, download_time) as date_end, e.status_id_one, e.status_id_two, client.name as client FROM service 
+        INNER JOIN client ON client.id = service.client_id
+        INNER JOIN status ON status.id = service.status_id
+        LEFT JOIN (
+            SELECT service_id, 
+                SUM(CASE WHEN status_id = 3 THEN 1 ELSE 0 END) AS status_id_one,
+                SUM(CASE WHEN status_id = 4 THEN 1 ELSE 0 END) AS status_id_two
+            FROM evidences
+            GROUP BY service_id
+        ) AS e ON e.service_id = service.id 
+        ".$where."
+        order by status.id asc";
+
+        $sqlCount = "SELECT
+            SUM(CASE WHEN status_id = 1 THEN 1 ELSE 0 END) AS pending,
+            SUM(CASE WHEN status_id in (2,3,4,5)  THEN 1 ELSE 0 END) AS in_route,
+            SUM(CASE WHEN status_id = 6 THEN 1 ELSE 0 END) AS good
+            FROM service ".$where;
+
+        $services = DB::select($sql);
+        $servicesCount = DB::select($sqlCount);
+
+        return response()->json(["data" => $services, "count" => $servicesCount, "sql" => $sql], 200);
     }
 
     public function calendar()

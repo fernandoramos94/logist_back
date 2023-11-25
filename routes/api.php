@@ -50,6 +50,7 @@ Route::get("service/delete/{id}", [ServiceController::class, 'destroy']);
 Route::get("service/calendar", [ServiceController::class, 'calendar']);
 Route::get("service/cancelOrder/{id}", [ServiceController::class, 'cancelOrder']);
 Route::get("service/updateStatus/{id}/{status}", [ServiceController::class, 'updateStatus']);
+Route::post("service/filter", [ServiceController::class, 'filter']);
 
 // Services clients
 Route::get("client/list", [ClientController::class, 'index']);
