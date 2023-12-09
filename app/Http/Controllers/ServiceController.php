@@ -6,7 +6,9 @@ use App\Models\Evidences;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Service;
+use App\Models\Status;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use PDF;
@@ -40,6 +42,15 @@ class ServiceController extends Controller
 
         $services = DB::select($sql);
         $servicesCount = DB::select($sqlCount);
+
+
+        foreach ($services as $item) {
+            $item->logs = DB::table("logs")->select("logs.ip", "logs.event", "logs.created_at", "users.name")
+                            ->join("users", "users.id", "=", "logs.user_id")
+                            ->join("service", "service.id", "=", "logs.service_id")
+                            ->where("logs.service_id", $item->id)
+                            ->get();
+        }
 
         return response()->json(["data" => $services, "count" => $servicesCount], 200);
     }
@@ -200,6 +211,8 @@ class ServiceController extends Controller
 
             $this->insertServiceAssistant($request["assistants"], $idService);
 
+            $this->insertLog("Creación de Servicio", $idService, $request["user_id"]);
+
             return response()->json(["msg" => "La orden se ha creado de forma exitosa."], 200);
         }
     }
@@ -213,6 +226,18 @@ class ServiceController extends Controller
         }
 
         $table = DB::table("service_assitant")->insert($arrayDataInsert);
+        return true;
+    }
+
+    public function insertLog($event, $service_id, $user_id){
+        $insert = DB::table("logs")->insert([
+            "user_id" => $user_id,
+            "event" => $event,
+            "service_id" => $service_id,
+            "ip" => file_get_contents('https://api.ipify.org'),
+            "created_at" => Carbon::now()
+        ]);
+
         return true;
     }
 
@@ -324,7 +349,7 @@ class ServiceController extends Controller
         return response()->json(["msg" => "Se ha elimando el servicio de forma exitosa."], 200);
     }
 
-    public function uploadimage(Request $request, $id, $status)
+    public function uploadimage(Request $request, $id, $status, $user_id)
     {
         if (!$request->hasFile('file')) {
             return response()->json(['upload_file_not_found'], 400);
@@ -352,9 +377,24 @@ class ServiceController extends Controller
                     $save->service_id = $id;
                     $save->status_id = $status;
                     $save->save();
+
+                    $text_status = "";
+
+                    if((int)$status === 3){
+                        $text_status = "Carga";
+                    }else{
+                        $text_status = "Descarga";
+                    }
+
+                    $this->insertLog("Cargue Evidencias de ". $text_status, $id, $user_id);
+
                     if ((int)$status == 3) {
+                        $status = Status::find(4);
+                        $this->insertLog("Cambio de Estado: ". $status->name, $id, $user_id);
                         Service::where("id", $id)->update(["status_id" => 4]);
                     } else if ((int)$status == 4) {
+                        $status = Status::find(5);
+                        $this->insertLog("Cambio de Estado: ". $status->name, $id, $user_id);
                         Service::where("id", $id)->update(["status_id" => 5]);
                     }
                 }
@@ -365,8 +405,11 @@ class ServiceController extends Controller
             return response()->json(['file_uploaded'], 200);
         }
     }
-    public function updateStatus($id, $status)
+    public function updateStatus($id, $status, $user_id)
     {
+
+        $statusData = Status::find($status);
+        $this->insertLog("Cambio de Estado: ". $statusData->name, $id, $user_id);
         Service::where("id", $id)->update(["status_id" => $status]);
 
         return response()->json(["msg" => "ok"], 200);
@@ -401,8 +444,6 @@ class ServiceController extends Controller
             'data' => $info
         ];
 
-
-
         $pdf = PDF::loadView('orden', $data);
 
         return $pdf->stream('ordenServicio' . $info->id . '.pdf');
@@ -423,7 +464,9 @@ class ServiceController extends Controller
         return response()->json($data, 200);
     }
 
-    public function cancelOrder($id){
+    public function cancelOrder($id, $user_id){
+        $this->insertLog("Cancelación del Servicio", $id, $user_id);
+
         Service::where("id", $id)->update(["status_id" => 7]);
         return response()->json(["msg" => "ok"], 200);
     }

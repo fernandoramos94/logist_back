@@ -49,8 +49,8 @@ Route::post("service/evidences", [ServiceController::class, 'evidences']);
 Route::post("service/update/{id}", [ServiceController::class, 'update']);
 Route::get("service/delete/{id}", [ServiceController::class, 'destroy']);
 Route::get("service/calendar", [ServiceController::class, 'calendar']);
-Route::get("service/cancelOrder/{id}", [ServiceController::class, 'cancelOrder']);
-Route::get("service/updateStatus/{id}/{status}", [ServiceController::class, 'updateStatus']);
+Route::get("service/cancelOrder/{id}/{user_id}", [ServiceController::class, 'cancelOrder']);
+Route::get("service/updateStatus/{id}/{status}/{user_id}", [ServiceController::class, 'updateStatus']);
 Route::post("service/filter", [ServiceController::class, 'filter']);
 
 // Services clients
@@ -93,6 +93,6 @@ Route::get("code_postal/{code}", [CologneController::class, 'getCodes']);
 Route::get("status/", [StatusController::class, 'getData']);
 
 // uplaod files
-Route::post("upload/evidences/{id}/{status}", [ServiceController::class, 'uploadimage']);
+Route::post("upload/evidences/{id}/{status}/{user_id}", [ServiceController::class, 'uploadimage']);
 
 
