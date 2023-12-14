@@ -432,6 +432,10 @@ class ServiceController extends Controller
             ->where("service.id", $id)->first();
 
 
+        $info->upload_date = date('m/d/Y', strtotime($info->upload_date));
+        $info->download_date = date('m/d/Y', strtotime($info->download_date));
+
+
         $assistants = DB::table("service_assitant")->select(DB::raw("CONCAT(assistant.name, ' ', assistant.last_name) AS assistant"))->where("order_id", $id)
             ->join("assistant", "assistant.id", "=", "service_assitant.assistant_id")
             ->get();
