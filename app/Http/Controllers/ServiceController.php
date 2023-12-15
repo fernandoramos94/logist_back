@@ -453,6 +453,11 @@ class ServiceController extends Controller
         return $pdf->stream('ordenServicio' . $info->id . '.pdf');
     }
 
+    public function observation(Request $request, $id){
+        Service::where("id", $id)->update(["observation" => $request["observation"]]);
+        return response()->json(["msg" => "ok"], 200);
+    }
+
     public function evidences(Request $request)
     {
         $data = Evidences::where([

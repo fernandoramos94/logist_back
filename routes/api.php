@@ -50,6 +50,7 @@ Route::post("service/update/{id}", [ServiceController::class, 'update']);
 Route::get("service/delete/{id}", [ServiceController::class, 'destroy']);
 Route::get("service/calendar", [ServiceController::class, 'calendar']);
 Route::get("service/cancelOrder/{id}/{user_id}", [ServiceController::class, 'cancelOrder']);
+Route::post("service/observation/{id}", [ServiceController::class, 'observation']);
 Route::get("service/updateStatus/{id}/{status}/{user_id}", [ServiceController::class, 'updateStatus']);
 Route::post("service/filter", [ServiceController::class, 'filter']);
 
