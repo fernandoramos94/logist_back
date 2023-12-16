@@ -210,6 +210,7 @@ class ServiceController extends Controller
             ]);
 
             $this->insertServiceAssistant($request["assistants"], $idService);
+            $this->insertAddress($request["address"], $idService);
 
             $this->insertLog("Creación de Servicio", $idService, $request["user_id"]);
 
@@ -218,14 +219,20 @@ class ServiceController extends Controller
     }
 
     public function insertServiceAssistant($data, $service_id){
-
         $arrayDataInsert = [];
-
         foreach ($data as $item) {
             $arrayDataInsert[] = array("order_id" => $service_id, "assistant_id" => $item["assistant_id"]);
         }
-
         $table = DB::table("service_assitant")->insert($arrayDataInsert);
+        return true;
+    }
+
+    public function insertAddress($data, $service_id){
+        $arrayDataInsert = [];
+        foreach ($data as $item) {
+            $arrayDataInsert[] = array("service_id" => $service_id, "origin" => $item["origin"], "destination" => $item["destination"]);
+        }
+        $table = DB::table("service_address")->insert($arrayDataInsert);
         return true;
     }
 
@@ -440,8 +447,16 @@ class ServiceController extends Controller
             ->join("assistant", "assistant.id", "=", "service_assitant.assistant_id")
             ->get();
 
+        $address = DB::table("service_address")->select("destination", "origin")->where("service_id", $id)
+            ->get();
+
         foreach ($assistants as $item) {
             $info->assistant = $info->assistant . ', '.  $item->assistant;
+        }
+
+        foreach ($address as $item) {
+            $info->origin_address = $info->origin_address . " || " .  $item->origin;
+            $info->destination_address = $info->destination_address . ' || '.  $item->destination;
         }
         $data = [
             'title' => 'Services',
