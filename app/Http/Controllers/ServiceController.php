@@ -396,12 +396,12 @@ class ServiceController extends Controller
                     $this->insertLog("Cargue Evidencias de ". $text_status, $id, $user_id);
 
                     if ((int)$status == 3) {
-                        $status = Status::find(4);
-                        $this->insertLog("Cambio de Estado: ". $status->name, $id, $user_id);
+                        $status_find = Status::find(4);
+                        $this->insertLog("Cambio de Estado: ". $status_find->name, $id, $user_id);
                         Service::where("id", $id)->update(["status_id" => 4]);
                     } else if ((int)$status == 4) {
-                        $status = Status::find(5);
-                        $this->insertLog("Cambio de Estado: ". $status->name, $id, $user_id);
+                        $status_find = Status::find(5);
+                        $this->insertLog("Cambio de Estado: ". $status_find->name, $id, $user_id);
                         Service::where("id", $id)->update(["status_id" => 5]);
                     }
                 }
