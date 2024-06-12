@@ -272,6 +272,11 @@
 </head>
 
 <body>
+    <p style="text-align:right;">
+        <span class="text-color span-input" style="text-align: right;">
+            Folio: {{$data->folio}}
+        </span>
+    </p>
     <header>
         <img class="pt-2 logo" src="static/img/logo.png" alt="logo" />
     </header>
