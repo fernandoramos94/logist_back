@@ -209,6 +209,10 @@ class ServiceController extends Controller
                 "created_at" => Carbon::now()
             ]);
 
+            $count = Service::all()->count();
+
+            Service::where("id", $idService)->update(["folio" => $count]);
+
             $this->insertServiceAssistant($request["assistants"], $idService);
             $this->insertAddress($request["address"], $idService);
 
