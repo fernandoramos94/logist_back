@@ -23,16 +23,19 @@ class ServiceController extends Controller
     public function index()
     {
 
-        $sql = "SELECT service.*, concat_ws(' ', upload_date, charging_hour) as date_start, concat_ws(' ', download_date, download_time) as date_end, e.status_id_one, e.status_id_two, client.name as client FROM service 
+        $sql = "SELECT unit.unit, service.*, concat_ws(' ', DATE_FORMAT(upload_date, '%d/%m/%Y'), charging_hour) as date_start, concat_ws(' ', DATE_FORMAT(download_date, '%d/%m/%Y'), download_time) as date_end, e.status_id_one, e.status_id_two, client.name as client FROM service 
         INNER JOIN client ON client.id = service.client_id
         INNER JOIN status ON status.id = service.status_id
+        INNER JOIN unit on service.unit_id = unit.id
         LEFT JOIN (
             SELECT service_id, 
                 SUM(CASE WHEN status_id = 3 THEN 1 ELSE 0 END) AS status_id_one,
                 SUM(CASE WHEN status_id = 4 THEN 1 ELSE 0 END) AS status_id_two
             FROM evidences
             GROUP BY service_id
-        ) AS e ON e.service_id = service.id order by status.id asc";
+        ) AS e ON e.service_id = service.id
+        
+         order by service.created_at desc, status.id asc";
 
         $sqlCount = "SELECT
             SUM(CASE WHEN status_id = 1 THEN 1 ELSE 0 END) AS pending,
@@ -51,8 +54,46 @@ class ServiceController extends Controller
                             ->where("logs.service_id", $item->id)
                             ->get();
         }
+ 
+        $grouped = [];
+        $key = "unit";
+        $grouped = [];
 
-        return response()->json(["data" => $services, "count" => $servicesCount], 200);
+        foreach ($services as $item) {
+            $item->created_at = Carbon::parse($item->created_at)->format("d/m/Y");
+            // $category = $item->unit;
+            // $year = Carbon::parse($item->created_at)->format("Y-m-d");
+            // if (!isset($grouped[$category])) {
+            //     $grouped[$category] = [];
+            // }
+            // if (!isset($grouped[$category][$year])) {
+            //     $grouped[$category][$year] = [];
+            // }
+            // $grouped[$category][$year][] = $item;
+        }
+
+        // $keys = array_keys($grouped);
+
+        $gpro = [];
+
+        // $index = 0;
+
+        // foreach ($keys as $key) {
+        //     $keys_dates = array_keys($grouped[$key]);
+        //     $gpro[] = [
+        //         "unit" => $key,
+        //         "data" => []
+        //     ];
+        //     foreach($keys_dates as $key_date){
+        //         $gpro[$index]["data"][] = [
+        //             "date" => $key_date,
+        //             "data" => $grouped[$key][$key_date]
+        //         ];
+        //     }
+        //     $index++;
+        // }
+
+        return response()->json(["data" => $services, "count" => $servicesCount, "data_group" => $gpro], 200);
     }
 
     public function filter(Request $request){
@@ -75,9 +116,10 @@ class ServiceController extends Controller
             $where .= $where != null ? " and service.created_at like '%". $request["created_at"]."%'" : "where service.created_at like '%". $request["created_at"]."%'";
         }
 
-        $sql = "SELECT service.*, concat_ws(' ', upload_date, charging_hour) as date_start, concat_ws(' ', download_date, download_time) as date_end, e.status_id_one, e.status_id_two, client.name as client FROM service 
+        $sql = "SELECT unit.unit, service.*, DATE_FORMAT(service.created_at, '%d/%m/%Y') as created_at, concat_ws(' ', DATE_FORMAT(upload_date, '%d/%m/%Y'), charging_hour) as date_start, concat_ws(' ', DATE_FORMAT(download_date, '%d/%m/%Y'), download_time) as date_end, e.status_id_one, e.status_id_two, client.name as client FROM service 
         INNER JOIN client ON client.id = service.client_id
         INNER JOIN status ON status.id = service.status_id
+        INNER JOIN unit on service.unit_id = unit.id
         LEFT JOIN (
             SELECT service_id, 
                 SUM(CASE WHEN status_id = 3 THEN 1 ELSE 0 END) AS status_id_one,
@@ -86,7 +128,7 @@ class ServiceController extends Controller
             GROUP BY service_id
         ) AS e ON e.service_id = service.id 
         ".$where."
-        order by status.id asc";
+        order by service.created_at desc, status.id asc";
 
         $sqlCount = "SELECT
             SUM(CASE WHEN status_id = 1 THEN 1 ELSE 0 END) AS pending,
@@ -211,7 +253,10 @@ class ServiceController extends Controller
 
             $count = Service::all()->count();
 
-            Service::where("id", $idService)->update(["folio" => $count]);
+            Service::where("id", $idService)->update([
+                "folio" => $count, 
+                "unified" => isset($request["unified"]) && $request["unified"] != "" ? $request["unified"] : $idService 
+            ]);
 
             $this->insertServiceAssistant($request["assistants"], $idService);
             $this->insertAddress($request["address"], $idService);
@@ -497,5 +542,26 @@ class ServiceController extends Controller
 
         Service::where("id", $id)->update(["status_id" => 7]);
         return response()->json(["msg" => "ok"], 200);
+    }
+    public function validUnified(Request $request) {
+
+        $info = Service::select(
+            "service.id",
+            "service.driver_id",
+            "service.assistant_id",
+            DB::raw("CONCAT(driver.name, ' ', driver.last_name) AS driver"),
+            DB::raw("CONCAT(assistant.name, ' ', assistant.last_name) AS assistant")
+        )->join("client", "client.id", "=", "service.client_id")
+            ->join("unit", "unit.id", "=", "service.unit_id")
+            ->join("assistant", "assistant.id", "=", "service.assistant_id")
+            ->join("driver", "driver.id", "=", "service.driver_id")
+            ->where([
+                ["service.unit_id", "=", $request["unit"]],
+                ["service.destination_address", "=", $request["destination"]],
+            ])->whereDate('service.created_at', DB::raw('CURDATE()'))->first();
+
+
+        return response()->json(["data" => $info]);
+        
     }
 }

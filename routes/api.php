@@ -53,6 +53,7 @@ Route::get("service/cancelOrder/{id}/{user_id}", [ServiceController::class, 'can
 Route::post("service/observation/{id}", [ServiceController::class, 'observation']);
 Route::get("service/updateStatus/{id}/{status}/{user_id}", [ServiceController::class, 'updateStatus']);
 Route::post("service/filter", [ServiceController::class, 'filter']);
+Route::post("service/validUnified", [ServiceController::class, 'validUnified']);
 
 // Services clients
 Route::get("client/list", [ClientController::class, 'index']);
@@ -95,5 +96,7 @@ Route::get("status/", [StatusController::class, 'getData']);
 
 // uplaod files
 Route::post("upload/evidences/{id}/{status}/{user_id}", [ServiceController::class, 'uploadimage']);
+
+
 
 
