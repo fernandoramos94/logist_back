@@ -23,7 +23,7 @@ class ServiceController extends Controller
     public function index()
     {
 
-        $sql = "SELECT unit.unit, service.*, concat_ws(' ', DATE_FORMAT(upload_date, '%d/%m/%Y'), charging_hour) as date_start, concat_ws(' ', DATE_FORMAT(download_date, '%d/%m/%Y'), download_time) as date_end, e.status_id_one, e.status_id_two, client.name as client FROM service 
+        $sql = "SELECT unit.unit, service.*, concat_ws('_', unit.unit, service.unified) as unified_concat, concat_ws(' ', DATE_FORMAT(upload_date, '%d/%m/%Y'), charging_hour) as date_start, concat_ws(' ', DATE_FORMAT(download_date, '%d/%m/%Y'), download_time) as date_end, e.status_id_one, e.status_id_two, client.name as client FROM service 
         INNER JOIN client ON client.id = service.client_id
         INNER JOIN status ON status.id = service.status_id
         INNER JOIN unit on service.unit_id = unit.id
