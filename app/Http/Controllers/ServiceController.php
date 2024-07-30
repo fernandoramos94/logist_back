@@ -54,44 +54,12 @@ class ServiceController extends Controller
                             ->where("logs.service_id", $item->id)
                             ->get();
         }
- 
-        $grouped = [];
-        $key = "unit";
-        $grouped = [];
 
         foreach ($services as $item) {
             $item->created_at = Carbon::parse($item->created_at)->format("d/m/Y");
-            // $category = $item->unit;
-            // $year = Carbon::parse($item->created_at)->format("Y-m-d");
-            // if (!isset($grouped[$category])) {
-            //     $grouped[$category] = [];
-            // }
-            // if (!isset($grouped[$category][$year])) {
-            //     $grouped[$category][$year] = [];
-            // }
-            // $grouped[$category][$year][] = $item;
         }
 
-        // $keys = array_keys($grouped);
-
         $gpro = [];
-
-        // $index = 0;
-
-        // foreach ($keys as $key) {
-        //     $keys_dates = array_keys($grouped[$key]);
-        //     $gpro[] = [
-        //         "unit" => $key,
-        //         "data" => []
-        //     ];
-        //     foreach($keys_dates as $key_date){
-        //         $gpro[$index]["data"][] = [
-        //             "date" => $key_date,
-        //             "data" => $grouped[$key][$key_date]
-        //         ];
-        //     }
-        //     $index++;
-        // }
 
         return response()->json(["data" => $services, "count" => $servicesCount, "data_group" => $gpro], 200);
     }
@@ -116,7 +84,7 @@ class ServiceController extends Controller
             $where .= $where != null ? " and service.created_at like '%". $request["created_at"]."%'" : "where service.created_at like '%". $request["created_at"]."%'";
         }
 
-        $sql = "SELECT unit.unit, service.*, DATE_FORMAT(service.created_at, '%d/%m/%Y') as created_at, concat_ws(' ', DATE_FORMAT(upload_date, '%d/%m/%Y'), charging_hour) as date_start, concat_ws(' ', DATE_FORMAT(download_date, '%d/%m/%Y'), download_time) as date_end, e.status_id_one, e.status_id_two, client.name as client FROM service 
+        $sql = "SELECT unit.unit, service.*, concat_ws('_', unit.unit, service.unified) as unified_concat, concat_ws(' ', DATE_FORMAT(upload_date, '%d/%m/%Y'), charging_hour) as date_start, concat_ws(' ', DATE_FORMAT(download_date, '%d/%m/%Y'), download_time) as date_end, e.status_id_one, e.status_id_two, client.name as client FROM service 
         INNER JOIN client ON client.id = service.client_id
         INNER JOIN status ON status.id = service.status_id
         INNER JOIN unit on service.unit_id = unit.id
@@ -126,20 +94,35 @@ class ServiceController extends Controller
                 SUM(CASE WHEN status_id = 4 THEN 1 ELSE 0 END) AS status_id_two
             FROM evidences
             GROUP BY service_id
-        ) AS e ON e.service_id = service.id 
+        ) AS e ON e.service_id = service.id
         ".$where."
-        order by service.created_at desc, status.id asc";
+         order by service.created_at desc, status.id asc";
 
         $sqlCount = "SELECT
             SUM(CASE WHEN status_id = 1 THEN 1 ELSE 0 END) AS pending,
             SUM(CASE WHEN status_id in (2,3,4,5)  THEN 1 ELSE 0 END) AS in_route,
             SUM(CASE WHEN status_id = 6 THEN 1 ELSE 0 END) AS good
-            FROM service ".$where;
+            FROM service";
 
         $services = DB::select($sql);
         $servicesCount = DB::select($sqlCount);
 
-        return response()->json(["data" => $services, "count" => $servicesCount, "sql" => $sql], 200);
+
+        foreach ($services as $item) {
+            $item->logs = DB::table("logs")->select("logs.ip", "logs.event", "logs.created_at", "users.name")
+                            ->join("users", "users.id", "=", "logs.user_id")
+                            ->join("service", "service.id", "=", "logs.service_id")
+                            ->where("logs.service_id", $item->id)
+                            ->get();
+        }
+
+        foreach ($services as $item) {
+            $item->created_at = Carbon::parse($item->created_at)->format("d/m/Y");
+        }
+
+        $gpro = [];
+
+        return response()->json(["data" => $services, "count" => $servicesCount, "data_group" => $gpro], 200);
     }
 
     public function calendar()
