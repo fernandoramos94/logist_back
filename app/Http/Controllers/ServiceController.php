@@ -537,6 +537,18 @@ class ServiceController extends Controller
         return response()->json($data, 200);
     }
 
+    public function allEvidences(Request $request){
+        $data = Evidences::where([
+            ["service_id", "=", $request["orden_id"]]
+        ])->get();
+        
+        foreach ($data as $item) {
+            $item["img"] = Storage::url($item["img"]);
+        }
+
+        return response()->json($data, 200);
+    }
+
     public function cancelOrder($id, $user_id){
         $this->insertLog("Cancelación del Servicio", $id, $user_id);
 

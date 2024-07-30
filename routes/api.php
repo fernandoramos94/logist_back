@@ -46,6 +46,7 @@ Route::post("user/uploadPhoto/{id}", [UserController::class, 'uploadimage']);
 Route::get("service/list", [ServiceController::class, 'index']);
 Route::post("service/add", [ServiceController::class, 'store']);
 Route::post("service/evidences", [ServiceController::class, 'evidences']);
+Route::post("service/allEvidences", [ServiceController::class, 'allEvidences']);
 Route::post("service/update/{id}", [ServiceController::class, 'update']);
 Route::get("service/delete/{id}", [ServiceController::class, 'destroy']);
 Route::get("service/calendar", [ServiceController::class, 'calendar']);
