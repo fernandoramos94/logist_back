@@ -54,8 +54,10 @@ class ServiceController extends Controller
                             ->join("service", "service.id", "=", "logs.service_id")
                             ->where("logs.service_id", $item->id)
                             ->get();
-                            
-            $item->assistants = Assistant::where("order_id", $item->id)->get();
+
+            $item->assistants = DB::table("service_assitant")->where("order_id", $item->id)
+            ->join("assistant", "assistant.id", "=", "service_assitant.assistant_id")
+            ->get();
         }
 
         foreach ($services as $item) {
