@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Assistant;
 use App\Models\Evidences;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -53,6 +54,8 @@ class ServiceController extends Controller
                             ->join("service", "service.id", "=", "logs.service_id")
                             ->where("logs.service_id", $item->id)
                             ->get();
+                            
+            $item->assistants = Assistant::where("order_id", $item->id)->get();
         }
 
         foreach ($services as $item) {
@@ -114,6 +117,8 @@ class ServiceController extends Controller
                             ->join("service", "service.id", "=", "logs.service_id")
                             ->where("logs.service_id", $item->id)
                             ->get();
+
+            $item->assistants = Assistant::where("order_id", $item->id)->get();
         }
 
         foreach ($services as $item) {
