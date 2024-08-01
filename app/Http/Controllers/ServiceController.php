@@ -257,6 +257,40 @@ class ServiceController extends Controller
         }
     }
 
+    public function unitUpdate(Request $request)
+    {
+
+        $validator = Validator::make($request->all(), [
+            "unit" => "required",
+            "driver" => "required",
+            "assistant" => "required"
+        ], [
+            "unit.required" => "El campo unidad es requerido.",
+            "driver.required" => "El campo operador es requerido.",
+            "assistant.required" => "El campo auxiliar es requerido."
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 406);
+        } else {
+            
+            Service::where("id", $request["id"])->update([
+                "unit_id" => $request["unit"],
+                "driver_id" => $request["driver"],
+                "assistant_id" => $request["assistant"],
+                "unified" => $request["id"]
+            ]);
+
+            DB::table("service_assitant")->where("order_id", $request["id"])->delete();
+
+            $this->insertServiceAssistant($request["assistants"], $request["id"]);
+
+            $this->insertLog("Cambio de unidad", $request["id"], $request["user_id"]);
+
+            return response()->json(["msg" => "Se ha realizado el cambio de unidad de forma exitosa."], 200);
+        }
+    }
+
     public function insertServiceAssistant($data, $service_id){
         $arrayDataInsert = [];
         foreach ($data as $item) {
