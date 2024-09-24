@@ -46,10 +46,12 @@ class UnitController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'unit' => 'required',
-            "plates" => 'required'
+            "plates" => 'required',
+            "type" => 'required'
         ], [
-            'name.unit' => 'El campo unidad es requerido',
-            'plates.required' => 'El campo placas es requerido'
+            'name.unit' => 'El campo nombre unidad es requerido',
+            'plates.required' => 'El campo placas es requerido',
+            'type.required' => 'El campo unidad es requerido'
         ]);
 
         if($validator->fails()){
@@ -57,7 +59,8 @@ class UnitController extends Controller
         }else{
             Unit::insert([
                 "unit" => $request["unit"],
-                "plates" => $request["plates"]
+                "plates" => $request["plates"],
+                "type" => $request["type"]
             ]);
 
             return response()->json(["msg" => "Se ha insertado el registro de forma existosa."], 200);
@@ -99,10 +102,12 @@ class UnitController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'unit' => 'required',
-            "plates" => 'required'
+            "plates" => 'required',
+            "type" => 'required'
         ], [
-            'name.unit' => 'El campo unidad es requerido',
-            'plates.required' => 'El campo placas es requerido'
+            'name.unit' => 'El campo nombre unidad es requerido',
+            'plates.required' => 'El campo placas es requerido',
+            'type.required' => 'El campo unidad es requerido'
         ]);
 
         if($validator->fails()){
@@ -110,7 +115,8 @@ class UnitController extends Controller
         }else{
             Unit::where("id", $id)->update([
                 "unit" => $request["unit"],
-                "plates" => $request["plates"]
+                "plates" => $request["plates"],
+                "type" => $request["type"]
             ]);
 
             return response()->json(["msg" => "Se ha actualizado el registro de forma existosa."], 200);

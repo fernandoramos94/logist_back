@@ -503,6 +503,7 @@ class ServiceController extends Controller
             "client.name as client",
             "unit.plates",
             "unit.unit",
+            "unit.type",
             DB::raw("CONCAT(driver.name, ' ', driver.last_name) AS driver"),
             DB::raw("CONCAT(assistant.name, ' ', assistant.last_name) AS assistant")
         )->join("client", "client.id", "=", "service.client_id")

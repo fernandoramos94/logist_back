@@ -506,6 +506,21 @@
         </footer>
 
     </main>
+    <div>
+        @if($data->type == 1)
+            <img src="static/img/checklist/CHECK_LIST_VAN_CHICA.jpg" alt="" style="width: 800px; left: -45px; position:relative">
+        @elseif($data->type == 2)
+            <img src="static/img/checklist/CHECK_LIST_CHATO.jpg" alt="" style="width: 800px; left: -45px; position:relative">
+        @elseif($data->type == 3)
+            <img src="static/img/checklist/CHECK_LIST_MEDIANA.jpg" alt="" style="width: 800px; left: -45px; position:relative">
+        @elseif($data->type == 4)
+            <img src="static/img/checklist/CHECK_LIST_RAM.jpg" alt="" style="width: 800px; left: -45px; position:relative">
+        @elseif($data->type == 5)
+            <img src="static/img/checklist/CHECK_LIST_TORTON.jpg" alt="" style="width: 800px; left: -45px; position:relative">
+        @elseif($data->type == 6)
+            <img src="static/img/checklist/CHECK_LIST_TRACTO.jpg" alt="" style="width: 800px; left: -45px; position:relative">
+        @endif
+    </div>
 </body>
 
 </html>
