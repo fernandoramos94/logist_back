@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Driver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 
 class DriverController extends Controller
 {
@@ -26,7 +27,7 @@ class DriverController extends Controller
 
     public function getData()
     {
-        $data = Driver::select("id", "name", "last_name")->where("active",1)->get();
+        $data = Driver::select("id", DB::raw("CONCAT(name, ' ', last_name) as name"))->where("active",1)->get();
         return response()->json($data, 200);
     }
 
@@ -175,7 +176,7 @@ class DriverController extends Controller
      */
     public function destroy($id)
     {
-        $delete = Driver::where("id", $id)>update(["active" => false]);
+        $delete = Driver::where("id", $id)->update(["active" => false]);
 
         return response()->json(["msg" => "Se ha eliminado el recurso de forma existosa"], 200);
     }

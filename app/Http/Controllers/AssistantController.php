@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Assistant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 
 class AssistantController extends Controller
 {
@@ -27,7 +28,7 @@ class AssistantController extends Controller
 
     public function getData()
     {
-        $data = Assistant::select("id", "name", "last_name")->where("active", 1)->get();
+        $data = Assistant::select("id", DB::raw("CONCAT(name, ' ', last_name) as name"))->where("active", 1)->get();
         return response()->json($data, 200);
     }
     /**
