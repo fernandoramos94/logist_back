@@ -70,9 +70,10 @@ class ServiceController extends Controller
     }
 
     public function filter(Request $request){
-
+        
         $where = null;
 
+        // Filters
         if($request["client"]){
             $where .= $where != null ? " and service.client_id = ". $request["client"] : "where service.client_id = ". $request["client"];
         }
@@ -89,6 +90,15 @@ class ServiceController extends Controller
             $where .= $where != null ? " and service.created_at like '%". $request["created_at"]."%'" : "where service.created_at like '%". $request["created_at"]."%'";
         }
 
+        // Pagination params
+        $page = (int) ($request->input('page', 1));
+        $page = $page > 0 ? $page : 1;
+        $pageSize = (int) ($request->input('pageSize', 50));
+        // Cap pageSize to avoid huge payloads
+        if ($pageSize <= 0) { $pageSize = 50; }
+        if ($pageSize > 1000) { $pageSize = 1000; }
+        $offset = ($page - 1) * $pageSize;
+
         $sql = "SELECT unit.unit, service.*, concat_ws('_', unit.unit, service.unified) as unified_concat, concat_ws(' ', DATE_FORMAT(upload_date, '%d/%m/%Y'), charging_hour) as date_start, concat_ws(' ', DATE_FORMAT(download_date, '%d/%m/%Y'), download_time) as date_end, e.status_id_one, e.status_id_two, client.name as client FROM service 
         INNER JOIN client ON client.id = service.client_id
         INNER JOIN status ON status.id = service.status_id
@@ -101,7 +111,8 @@ class ServiceController extends Controller
             GROUP BY service_id
         ) AS e ON e.service_id = service.id
         ".$where."
-         order by service.created_at desc, status.id asc";
+         order by service.created_at desc, status.id asc
+         limit ".$pageSize." offset ".$offset;
 
         $sqlCount = "SELECT
             SUM(CASE WHEN status_id = 1 THEN 1 ELSE 0 END) AS pending,
@@ -109,18 +120,25 @@ class ServiceController extends Controller
             SUM(CASE WHEN status_id = 6 THEN 1 ELSE 0 END) AS good
             FROM service";
 
+        // Total filtered rows (for AG Grid)
+        $sqlTotal = "SELECT COUNT(1) as total FROM service ".($where ? $where : "");
+
         $services = DB::select($sql);
         $servicesCount = DB::select($sqlCount);
+        $totalResult = DB::select($sqlTotal);
+        $total = count($totalResult) > 0 ? (int)$totalResult[0]->total : 0;
 
 
         foreach ($services as $item) {
             $item->logs = DB::table("logs")->select("logs.ip", "logs.event", "logs.created_at", "users.name")
-                            ->join("users", "users.id", "=", "logs.user_id")
-                            ->join("service", "service.id", "=", "logs.service_id")
-                            ->where("logs.service_id", $item->id)
-                            ->get();
+                ->join("users", "users.id", "=", "logs.user_id")
+                ->join("service", "service.id", "=", "logs.service_id")
+                ->where("logs.service_id", $item->id)
+                ->get();
 
-            $item->assistants = Assistant::where("order_id", $item->id)->get();
+            $item->assistants = DB::table("service_assitant")->where("order_id", $item->id)
+                ->join("assistant", "assistant.id", "=", "service_assitant.assistant_id")
+                ->get();
         }
 
         foreach ($services as $item) {
