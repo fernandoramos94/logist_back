@@ -5,6 +5,7 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\CologneController;
 use App\Http\Controllers\DriverController;
 use App\Http\Controllers\ServiceController;
+use App\Http\Controllers\ServiceNoteController;
 use App\Http\Controllers\StatusController;
 use App\Http\Controllers\UnitController;
 use App\Http\Controllers\UserController;
@@ -52,10 +53,11 @@ Route::get("service/delete/{id}", [ServiceController::class, 'destroy']);
 Route::get("service/calendar", [ServiceController::class, 'calendar']);
 Route::get("service/cancelOrder/{id}/{user_id}", [ServiceController::class, 'cancelOrder']);
 Route::post("service/observation/{id}", [ServiceController::class, 'observation']);
-Route::get("service/updateStatus/{id}/{status}/{user_id}", [ServiceController::class, 'updateStatus']);
+Route::get("service/updateStatus/{id}/{status}/{user_id}/{address_service_id}/{next_address_service_id}", [ServiceController::class, 'updateStatus']);
 Route::post("service/filter", [ServiceController::class, 'filter']);
 Route::post("service/validUnified", [ServiceController::class, 'validUnified']);
 Route::post("service/update-unit", [ServiceController::class, 'unitUpdate']);
+Route::post("service/note/add", [ServiceNoteController::class, 'store']);
 
 // Services clients
 Route::get("client/list", [ClientController::class, 'index']);
@@ -97,7 +99,7 @@ Route::get("code_postal/{code}", [CologneController::class, 'getCodes']);
 Route::get("status/", [StatusController::class, 'getData']);
 
 // uplaod files
-Route::post("upload/evidences/{id}/{status}/{user_id}", [ServiceController::class, 'uploadimage']);
+Route::post("upload/evidences/{id}/{status}/{user_id}/{next_status}/{address_service_id}/{next_address_service_id}/{indexAddressCurrent}", [ServiceController::class, 'uploadimage']);
 
 
 

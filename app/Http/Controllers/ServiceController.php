@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Service;
 use App\Models\Status;
+use App\Models\AddressService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -70,84 +71,14 @@ class ServiceController extends Controller
     }
 
     public function filter(Request $request){
-        
-        $where = null;
-
-        // Filters
-        if($request["client"]){
-            $where .= $where != null ? " and service.client_id = ". $request["client"] : "where service.client_id = ". $request["client"];
-        }
-        if($request["status"]){
-            $where .= $where != null ? " and service.status_id = ". $request["status"] : "where service.status_id = ". $request["status"];
-        }
-        if($request["upload_date"]){
-            $where .= $where != null ? " and service.upload_date = '". $request["upload_date"]."'" : "where service.upload_date = '". $request["upload_date"]."'";
-        }
-        if($request["download_date"]){
-            $where .= $where != null ? " and service.download_date = '". $request["download_date"]."'" : "where service.download_date = '". $request["download_date"]."'";
-        }
-        if($request["created_at"]){
-            $where .= $where != null ? " and service.created_at like '%". $request["created_at"]."%'" : "where service.created_at like '%". $request["created_at"]."%'";
-        }
-
-        // Pagination params
-        $page = (int) ($request->input('page', 1));
-        $page = $page > 0 ? $page : 1;
-        $pageSize = (int) ($request->input('pageSize', 50));
-        // Cap pageSize to avoid huge payloads
-        if ($pageSize <= 0) { $pageSize = 50; }
-        if ($pageSize > 1000) { $pageSize = 1000; }
-        $offset = ($page - 1) * $pageSize;
-
-        $sql = "SELECT unit.unit, service.*, concat_ws('_', unit.unit, service.unified) as unified_concat, concat_ws(' ', DATE_FORMAT(upload_date, '%d/%m/%Y'), charging_hour) as date_start, concat_ws(' ', DATE_FORMAT(download_date, '%d/%m/%Y'), download_time) as date_end, e.status_id_one, e.status_id_two, client.name as client FROM service 
-        INNER JOIN client ON client.id = service.client_id
-        INNER JOIN status ON status.id = service.status_id
-        INNER JOIN unit on service.unit_id = unit.id
-        LEFT JOIN (
-            SELECT service_id, 
-                SUM(CASE WHEN status_id = 3 THEN 1 ELSE 0 END) AS status_id_one,
-                SUM(CASE WHEN status_id = 4 THEN 1 ELSE 0 END) AS status_id_two
-            FROM evidences
-            GROUP BY service_id
-        ) AS e ON e.service_id = service.id
-        ".$where."
-         order by service.created_at desc, status.id asc
-         limit ".$pageSize." offset ".$offset;
-
-        $sqlCount = "SELECT
-            SUM(CASE WHEN status_id = 1 THEN 1 ELSE 0 END) AS pending,
-            SUM(CASE WHEN status_id in (2,3,4,5)  THEN 1 ELSE 0 END) AS in_route,
-            SUM(CASE WHEN status_id = 6 THEN 1 ELSE 0 END) AS good
-            FROM service";
-
-        // Total filtered rows (for AG Grid)
-        $sqlTotal = "SELECT COUNT(1) as total FROM service ".($where ? $where : "");
-
-        $services = DB::select($sql);
-        $servicesCount = DB::select($sqlCount);
-        $totalResult = DB::select($sqlTotal);
-        $total = count($totalResult) > 0 ? (int)$totalResult[0]->total : 0;
-
-
-        foreach ($services as $item) {
-            $item->logs = DB::table("logs")->select("logs.ip", "logs.event", "logs.created_at", "users.name")
-                ->join("users", "users.id", "=", "logs.user_id")
-                ->join("service", "service.id", "=", "logs.service_id")
-                ->where("logs.service_id", $item->id)
-                ->get();
-
-            $item->assistants = DB::table("service_assitant")->where("order_id", $item->id)
-                ->join("assistant", "assistant.id", "=", "service_assitant.assistant_id")
-                ->get();
-        }
-
-        foreach ($services as $item) {
-            $item->created_at = Carbon::parse($item->created_at)->format("d/m/Y");
-        }
-
-        $gpro = [];
-
-        return response()->json(["data" => $services, "count" => $servicesCount, "data_group" => $gpro], 200);
+        // Delegate filtering to the model method
+        $result = Service::filterServices($request->all());
+        return response()->json([
+            "data" => $result['services'],
+            "count" => $result['servicesCount'],
+            // mantener compatibilidad con la respuesta anterior
+            "data_group" => []
+        ], 200);
     }
 
     public function calendar()
@@ -281,7 +212,7 @@ class ServiceController extends Controller
         $validator = Validator::make($request->all(), [
             "unit" => "required",
             "driver" => "required",
-            "assistant" => "required"
+            "assistant" => "required",
         ], [
             "unit.required" => "El campo unidad es requerido.",
             "driver.required" => "El campo operador es requerido.",
@@ -296,7 +227,14 @@ class ServiceController extends Controller
                 "unit_id" => $request["unit"],
                 "driver_id" => $request["driver"],
                 "assistant_id" => $request["assistant"],
-                "unified" => $request["id"]
+                "unified" => $request["id"],
+                "observation" => $request["observation"],
+                "charging_hour" => $request["charging_hour"],
+                "upload_date" => $request["upload_date"],
+                "download_date" => $request["download_date"],
+                "download_time" => $request["download_time"],
+                "origin_address" => $request["origin"],
+                "destination_address" => $request["destination"]
             ]);
 
             DB::table("service_assitant")->where("order_id", $request["id"])->delete();
@@ -321,9 +259,11 @@ class ServiceController extends Controller
     public function insertAddress($data, $service_id){
         $arrayDataInsert = [];
         foreach ($data as $item) {
-            $arrayDataInsert[] = array("service_id" => $service_id, "origin" => $item["origin"], "destination" => $item["destination"]);
+            $arrayDataInsert[] = array("service_id" => $service_id, "status_id" => 1, "origin" => $item["origin"], "destination" => $item["destination"]);
         }
-        $table = DB::table("service_address")->insert($arrayDataInsert);
+
+        AddressService::insert($arrayDataInsert);
+        // $table = DB::table("service_address")->insert($arrayDataInsert);
         return true;
     }
 
@@ -447,7 +387,7 @@ class ServiceController extends Controller
         return response()->json(["msg" => "Se ha elimando el servicio de forma exitosa."], 200);
     }
 
-    public function uploadimage(Request $request, $id, $status, $user_id)
+    public function uploadimage(Request $request, $id, $status, $user_id, $next_status, $address_service_id, $next_address_service_id, $indexAddressCurrent)
     {
         if (!$request->hasFile('file')) {
             return response()->json(['upload_file_not_found'], 400);
@@ -471,9 +411,11 @@ class ServiceController extends Controller
 
                     //store image file into directory and db
                     $save = new Evidences();
+                    
                     $save->img = $path;
                     $save->service_id = $id;
                     $save->status_id = $status;
+                    $save->identifier = $indexAddressCurrent;
                     $save->save();
 
                     $text_status = "";
@@ -486,14 +428,22 @@ class ServiceController extends Controller
 
                     $this->insertLog("Cargue Evidencias de ". $text_status, $id, $user_id);
 
-                    if ((int)$status == 3) {
-                        $status_find = Status::find(4);
-                        $this->insertLog("Cambio de Estado: ". $status_find->name, $id, $user_id);
-                        Service::where("id", $id)->update(["status_id" => 4]);
-                    } else if ((int)$status == 4) {
-                        $status_find = Status::find(5);
-                        $this->insertLog("Cambio de Estado: ". $status_find->name, $id, $user_id);
-                        Service::where("id", $id)->update(["status_id" => 5]);
+
+                    if($address_service_id != null){
+                        if((int)$next_status != 0){
+                            if((int)$status == 8){
+                                AddressService::where("id", $address_service_id)->update(["status_id" => $next_status]);
+                                if($next_address_service_id != null){
+                                    AddressService::where("id", $next_address_service_id)->update(["status_id" => 4]);
+                                }
+                            }
+                        }
+                    }else{
+                        if((int)$next_status != 0){
+                            $status_find = Status::find($next_status);
+                            $this->insertLog("Cambio de Estado: ". $status_find->name, $id, $user_id);
+                            Service::where("id", $id)->update(["status_id" => $next_status]);
+                        }
                     }
                 }
             } else {
@@ -503,12 +453,15 @@ class ServiceController extends Controller
             return response()->json(['file_uploaded'], 200);
         }
     }
-    public function updateStatus($id, $status, $user_id)
+    public function updateStatus($id, $status, $user_id, $address_service_id, $next_address_service_id)
     {
-
+        if($address_service_id == null){
+            Service::where("id", $id)->update(["status_id" => $status]);
+        } else {
+            AddressService::where("id", $address_service_id)->update(["status_id" => $status]);
+        }
         $statusData = Status::find($status);
         $this->insertLog("Cambio de Estado: ". $statusData->name, $id, $user_id);
-        Service::where("id", $id)->update(["status_id" => $status]);
 
         return response()->json(["msg" => "ok"], 200);
     }

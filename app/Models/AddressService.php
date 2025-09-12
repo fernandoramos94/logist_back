@@ -5,12 +5,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Status extends Model
+class AddressService extends Model
 {
-    protected $table = "status";
+
+    public $table = 'address_services';
+    public $timestamps = true;
     use HasFactory;
-    protected $hidden = [
-        'created_at',
-        'updated_at'
-    ];
 }
