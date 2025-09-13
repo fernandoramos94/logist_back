@@ -455,8 +455,8 @@ class ServiceController extends Controller
     }
     public function updateStatus($id, $status, $user_id, $address_service_id, $next_address_service_id)
     {
-        print_r(gettype($address_service_id));
-        if($address_service_id == null){
+        // print_r(gettype($address_service_id));
+        if($address_service_id == null || $address_service_id == "null" || $address_service_id == "undefined" || $address_service_id == ""){
             Service::where("id", $id)->update(["status_id" => $status]);
         } else {
             AddressService::where("id", $address_service_id)->update(["status_id" => $status]);
