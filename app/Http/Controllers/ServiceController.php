@@ -429,11 +429,11 @@ class ServiceController extends Controller
                     $this->insertLog("Cargue Evidencias de ". $text_status, $id, $user_id);
 
 
-                    if($address_service_id != null){
+                    if($address_service_id != null || $address_service_id != "null" || $address_service_id != "undefined" || $address_service_id != ""){
                         if((int)$next_status != 0){
                             if((int)$status == 8){
                                 AddressService::where("id", $address_service_id)->update(["status_id" => $next_status]);
-                                if($next_address_service_id != null){
+                                if($next_address_service_id != null || $next_address_service_id != "null" || $next_address_service_id != "undefined" || $next_address_service_id != ""){
                                     AddressService::where("id", $next_address_service_id)->update(["status_id" => 4]);
                                 }
                             }
