@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use Validator;
 use App\Models\User;
 use Illuminate\Support\Facades\Storage;
+use App\Models\Module;
 
 class UserController extends Controller
 {
@@ -161,5 +162,124 @@ class UserController extends Controller
         return response()->json(['file_uploaded'], 200);
     }
 
-    
+    public function permissions(){
+        // Deprecated placeholder; keeping for backward compatibility if used elsewhere.
+        return response()->json([], 200);
+    }
+
+    /**
+     * Get modules and actions permitted for a given user ID.
+     * Rules:
+     *  - A module is visible if the user's role has an active permission for it (permissions.is_active = true) and the module is active.
+     *  - An action is visible if:
+     *      a) There is an explicit action_permissions record for the user's role with is_active = true, OR
+     *      b) There is NO action_permissions record for the user's role, and the parent module permission is active (inherit allow).
+     *      If there is an explicit record with is_active = false, it must be excluded.
+     */
+    public function permissionsByUser($userId)
+    {
+        $user = User::find($userId);
+        if (!$user) {
+            return response()->json(['error' => 'Usuario no encontrado'], 404);
+        }
+
+        if (!$user->role) {
+            return response()->json([
+                'user' => $user,
+                'role' => null,
+                'modules' => [],
+            ], 200);
+        }
+
+        $roleId = (int) $user->role_id;
+
+        // Modules allowed for the role
+        $modules = Module::query()
+            ->where('is_active', true)
+            ->whereHas('roles', function ($q) use ($roleId) {
+                $q->where('roles.id', $roleId)
+                  ->where('permissions.is_active', true);
+            })
+            ->with(['actions' => function ($q) use ($roleId) {
+                $q->where('actions.is_active', true)
+                  ->where(function ($q2) use ($roleId) {
+                      // Explicit allow
+                      $q2->whereHas('roles', function ($q3) use ($roleId) {
+                          $q3->where('roles.id', $roleId)
+                             ->where('action_permissions.is_active', true);
+                      })
+                      // Or inherit allow when no explicit record exists for this role
+                      ->orWhereDoesntHave('roles', function ($q4) use ($roleId) {
+                          $q4->where('roles.id', $roleId);
+                      });
+                  })
+                  ->orderBy('order');
+            }])
+            ->orderBy('order')
+            ->get([
+                'id', 'name', 'order', 'icon', 'route', 'parent_id', 'is_active'
+            ]);
+
+        // Build flat array of modules with actions
+        $flat = [];
+        foreach ($modules as $m) {
+            $flat[$m->id] = [
+                'id' => $m->id,
+                'name' => $m->name,
+                'icon' => $m->icon,
+                'route' => $m->route,
+                'order' => $m->order,
+                'parent_id' => $m->parent_id,
+                'actions' => $m->actions->map(function ($a) {
+                    return [
+                        'id' => $a->id,
+                        'name' => $a->name,
+                        'icon' => $a->icon,
+                        'order' => $a->order,
+                    ];
+                })->values()->all(),
+                'children' => [],
+            ];
+        }
+
+        // Build tree using parent_id
+        $tree = [];
+        foreach ($flat as $id => &$node) {
+            $parentId = $node['parent_id'];
+            if ($parentId && isset($flat[$parentId])) {
+                $flat[$parentId]['children'][] = &$node;
+            } else {
+                $tree[] = &$node;
+            }
+        }
+        unset($node); // break reference
+
+        // Sort children by order
+        $sortByOrder = function (&$nodes) use (&$sortByOrder) {
+            usort($nodes, function ($a, $b) { return ($a['order'] <=> $b['order']); });
+            foreach ($nodes as &$n) {
+                if (!empty($n['children'])) {
+                    $sortByOrder($n['children']);
+                }
+            }
+            unset($n);
+        };
+        $sortByOrder($tree);
+
+        $payload = [
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role_id' => $user->role_id,
+            ],
+            'role' => [
+                'id' => $user->role->id,
+                'name' => $user->role->name,
+            ],
+            'modules' => array_values($tree),
+        ];
+
+        return response()->json($payload, 200);
+    }
 }

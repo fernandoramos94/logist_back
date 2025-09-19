@@ -14,6 +14,14 @@ class DatabaseSeeder extends Seeder
      */
     public function run()
     {
+        // Seed base modules and actions
+        $this->call([
+            ModulesSeeder::class,
+            ActionsSeeder::class,
+            PermissionsSeeder::class,
+            ActionPermissionsSeeder::class,
+        ]);
+
         DB::table('status')->insert([[
             'name' => "Pendiente"
         ], [ "name" => "En Ruta" ], ["name"=>"En proceso Carga"], ["name" => "En Ruta a Entregar"], ["name" => "Finalizado"], ["name" => "Servicio Exitoso"]]);
